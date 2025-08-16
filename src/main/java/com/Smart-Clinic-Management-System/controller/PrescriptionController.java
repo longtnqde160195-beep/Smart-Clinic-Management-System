@@ -1,15 +1,15 @@
-import com.yourproject.model.Prescription;
-import com.yourproject.service.PrescriptionService;
-import com.yourproject.service.TokenService;
-import jakarta.validation.Valid;
+package com.SmartClinicManagementSystem.controller;
+
+import com.SmartClinicManagementSystem.model.Prescription;
+import com.SmartClinicManagementSystem.service.PrescriptionService;
+import com.SmartClinicManagementSystem.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/prescriptions")
@@ -21,22 +21,25 @@ public class PrescriptionController {
     @Autowired
     private TokenService tokenService;
 
-    @PostMapping
-    public ResponseEntity<String> createPrescription(
-            @RequestHeader("Authorization") String token,
-            @Valid @RequestBody Prescription prescription) {
-        
-        // 1. Token validation
-        if (!tokenService.isValidToken(token)) {
-            return new ResponseEntity<>("Invalid or missing token", HttpStatus.UNAUTHORIZED);
+    @PostMapping("/save/{token}")
+    public ResponseEntity<Map<String, String>> savePrescription(
+            @RequestBody Prescription prescription,
+            @PathVariable("token") String token) {
+
+        Map<String, String> response = new HashMap<>();
+
+        if (!tokenService.isTokenValid(token)) {
+            response.put("message", "Invalid token.");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
 
-        // 2. Request body validation is handled by @Valid
         try {
             prescriptionService.savePrescription(prescription);
-            return new ResponseEntity<>("Prescription created successfully.", HttpStatus.CREATED);
+            response.put("message", "Prescription saved successfully.");
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>("Error saving prescription: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            response.put("message", "Error saving prescription.");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
